@@ -3,8 +3,9 @@
 const fs = require('fs-extra');
 const entriesExist = require('../utils/entriesExist')
 const PATHS = require('../config/paths')
+const chalk = require('chalk');
 
-process.env.NODE_ENV = 'development'
+process.env.NODE_ENV = 'production'
 
 // Makes the script crash on unhandled rejections instead of silently
 // ignoring them. In the future, promise rejections that are not handled will
@@ -18,19 +19,7 @@ if (!entriesExist()) {
   process.exit(1)
 }
 
-// const chalk = require('react-dev-utils/chalk');
 const webpack = require('webpack')
-// const WebpackDevServer = require('webpack-dev-server');
-// const clearConsole = require('react-dev-utils/clearConsole');
-// const checkRequiredFiles = require('react-dev-utils/checkRequiredFiles');
-// const {
-//   choosePort,
-//   createCompiler,
-//   prepareProxy,
-//   prepareUrls,
-// } = require('react-dev-utils/WebpackDevServerUtils');
-// const openBrowser = require('react-dev-utils/openBrowser');
-// const paths = require('../config/paths');
 
 const outputOptions = {
   context: PATHS.themePath,
@@ -42,34 +31,52 @@ const outputOptions = {
 }
 
 const webpackConfig = require('../config/webpack.config')
-const compiler = webpack(webpackConfig)
 
-/**
- * Compiler callback
- *
- * @param err
- * @param stats
- */
-const compilerCallback = function (err, stats) {
-  if (err) {
-    // Do not keep cache anymore
-    compiler.purgeInputFileSystem()
+const build = function() {
+  console.log( chalk.green( 'Generating Theme bundles...' ) );
+  console.log();
 
-    console.error(err.stack || err)
-    if (err.details) {
-      console.error(err.details)
-    }
-    process.exit(1)
-  }
+  const compiler = webpack(webpackConfig);
 
-  const statsString = stats.toString(outputOptions)
-  if (statsString) {
-    process.stdout.write(`${ statsString }\n`)
-  }
+  return new Promise( ( resolve, reject ) => {
+    fs.emptyDirSync(PATHS.dist);
+
+    return compiler.run((err, stats) => {
+
+      if (err) {
+        if (!err.message) {
+          return reject(err);
+        }
+
+        return reject(new Error(err.message));
+      }
+
+      if ( stats.hasErrors() ) {
+        return reject( stats.toJson().errors.join('\n\n') );
+      }
+
+      const statsString = stats.toString(outputOptions)
+      if (statsString) {
+        process.stdout.write(`${ statsString }\n`)
+      }
+
+      return resolve();
+    });
+  });
+
 }
 
-fs.emptyDirSync(PATHS.dist);
-compiler.run(compilerCallback);
-if (compiler.close) {
-  compiler.close(compilerCallback)
-}
+
+build()
+  .then(() => {
+    console.log();
+    console.log( chalk.black.bgGreen( "== Theme bundles ready. Take a look at your dist folder ==" ) );
+  })
+  .catch( (err) => {
+    console.log(  );
+    console.log( chalk.white.bgRed( "Whoooops, it looks like something went wrong:" ) );
+    console.log(  );
+    console.log( err );
+  });
+
+
