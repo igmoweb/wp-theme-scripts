@@ -44,7 +44,7 @@ switch (script) {
     process.exit(result.status)
     break
   }
-  case 'package': {
+  case 'zip': {
     let result = spawn.sync(
       'node',
       nodeArgs
@@ -55,7 +55,7 @@ switch (script) {
     result = spawn.sync(
       'node',
       nodeArgs
-        .concat(require.resolve('../scripts/package.js')),
+        .concat(require.resolve('../scripts/zip.js')),
       {stdio: 'inherit'}
     )
 
