@@ -39,7 +39,6 @@ module.exports = {
 
     // Exclude/Include these files from package when running npm run package
     package: [
-      '**/*',
       '!**/node_modules/**',
       '!**/package/**',
       '!**/codesniffer.ruleset.xml',
